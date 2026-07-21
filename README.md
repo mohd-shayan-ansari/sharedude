@@ -1,94 +1,129 @@
-# ShareDrop — Vercel Deployment Guide
+# ShareDrop — Vercel + Supabase Deployment Guide
 
-## Before You Deploy — Get These Credentials (Free)
-
-You need **2 free services**. Setup takes ~5 minutes.
+One free account (Supabase) handles everything: file storage + room state database.
 
 ---
 
-## Step 1 — Upstash Redis (room state)
+## What You Need
 
-1. Go to **[upstash.com](https://upstash.com)** → Sign up free
-2. Click **"Create Database"**
-   - Type: **Redis**
-   - Region: pick closest to your users (e.g. US-East-1)
-   - Plan: **Free**
-3. After creating, click your database → go to **REST API** tab
-4. Copy these two values — you'll need them:
-   ```
-   UPSTASH_REDIS_REST_URL = https://your-name.upstash.io
-   UPSTASH_REDIS_REST_TOKEN = AXxx...
-   ```
+- A **[Supabase](https://supabase.com)** account (free)
+- A **[Vercel](https://vercel.com)** account (free, connect with GitHub)
 
 ---
 
-## Step 2 — Deploy to Vercel
+## Step 1 — Create a Supabase Project
 
-1. Go to **[vercel.com](https://vercel.com)** → Sign up / Log in with GitHub
-2. Click **"Add New Project"**
-3. Import your repo: **`mohd-shayan-ansari/sharedude`**
-4. Click **"Deploy"** ← just click, don't change any settings yet
-
----
-
-## Step 3 — Connect Vercel Blob (file storage)
-
-1. In your Vercel project dashboard, go to **Storage** tab (left sidebar)
-2. Click **"Create Database"** → choose **Blob**
-3. Name it `sharedude-blob` → click **Create**
-4. Vercel will **automatically inject** `BLOB_READ_WRITE_TOKEN` into your project's environment variables ✅
+1. Go to **[supabase.com](https://supabase.com)** → Sign up / Log in
+2. Click **"New Project"**
+   - Name: `sharedude` (or anything)
+   - Region: closest to your users
+   - Password: set a strong DB password (save it)
+3. Wait ~1 minute for the project to initialize
 
 ---
 
-## Step 4 — Add Upstash Environment Variables
+## Step 2 — Run the Database Schema
 
-1. In your Vercel project, go to **Settings → Environment Variables**
-2. Add these two variables (for **all environments**):
+1. In your Supabase project, click **"SQL Editor"** in the left sidebar
+2. Click **"New Query"**
+3. Paste the contents of [`supabase/schema.sql`](./supabase/schema.sql)
+4. Click **"Run"** ✅
+
+---
+
+## Step 3 — Create the Storage Bucket
+
+1. In left sidebar → **"Storage"**
+2. Click **"New bucket"**
+   - Name: **`sharedrop`** (must match exactly)
+   - Public bucket: **OFF** (private — downloads use signed URLs)
+3. Click **"Create bucket"** ✅
+
+---
+
+## Step 4 — Get Your API Keys
+
+1. In left sidebar → **"Settings"** → **"API"**
+2. Copy these two values:
+
+   | Variable | Where to find it |
+   |---|---|
+   | `SUPABASE_URL` | "Project URL" field |
+   | `SUPABASE_SERVICE_ROLE_KEY` | "service_role" key (click "Reveal") |
+
+> ⚠️ Use the **service_role** key (not the anon key). It's used server-side only and never exposed to the browser.
+
+---
+
+## Step 5 — Deploy to Vercel
+
+1. Go to **[vercel.com](https://vercel.com)** → **"Add New Project"**
+2. Import repo: **`mohd-shayan-ansari/sharedude`**
+3. Before clicking Deploy, go to **"Environment Variables"** and add:
 
    | Name | Value |
    |---|---|
-   | `UPSTASH_REDIS_REST_URL` | your URL from Step 1 |
-   | `UPSTASH_REDIS_REST_TOKEN` | your token from Step 1 |
+   | `SUPABASE_URL` | your project URL |
+   | `SUPABASE_SERVICE_ROLE_KEY` | your service role key |
 
-3. Click **Save**
-
----
-
-## Step 5 — Redeploy
-
-1. Go to **Deployments** tab → click your latest deployment → **"Redeploy"**
-2. Wait ~30 seconds — your app is live! 🎉
+4. Click **"Deploy"** 🚀
 
 ---
 
-## Final File Structure on GitHub
+## Final Project Structure
 
 ```
 sharedude/
 ├── api/
-│   ├── create-room.js        ← POST /api/create-room
-│   ├── download.js           ← GET  /api/download?code=X&file=Y
-│   ├── room/
-│   │   └── [code].js         ← GET  /api/room/ABCDEF
-│   └── upload/
-│       └── [roomCode].js     ← POST /api/upload/ABCDEF
+│   ├── create-room.js           ← POST /api/create-room
+│   ├── download.js              ← GET  /api/download?code=X&file=Y
+│   ├── upload-url/
+│   │   └── [roomCode].js        ← POST /api/upload-url/ABCDEF
+│   ├── register-file/
+│   │   └── [roomCode].js        ← POST /api/register-file/ABCDEF
+│   └── room/
+│       └── [code].js            ← GET  /api/room/ABCDEF
+├── lib/
+│   └── supabase.js              ← Shared Supabase client
 ├── public/
-│   └── index.html            ← The UI
-├── .env.example              ← Environment variable template
+│   └── index.html               ← The UI (served at /)
+├── supabase/
+│   └── schema.sql               ← Run once in Supabase SQL Editor
+├── .env.example
 ├── package.json
 └── vercel.json
 ```
 
 ---
 
-## Limits on Vercel Free Tier
+## How the Upload Works
+
+```
+Browser → GET signed upload URL from /api/upload-url/ABCDEF
+        → PUT file DIRECTLY to Supabase Storage (no size limit from Vercel!)
+        → POST file metadata to /api/register-file/ABCDEF
+```
+
+Files never pass through Vercel serverless functions, so there's no size restriction from Vercel.
+
+---
+
+## Free Tier Limits
 
 | Feature | Limit |
 |---|---|
-| Max file size | **4 MB per file** (Vercel function body limit) |
+| Max file size | **50 MB** per file (Supabase free tier) |
 | Max files per room | 10 |
-| Room TTL | 5 minutes (Redis auto-expires the key) |
-| Vercel Blob storage | 500 MB free |
-| Upstash requests | 10,000/day free |
+| Room TTL | 5 minutes |
+| Supabase Storage | **1 GB** free |
+| Supabase DB rows | 500 MB free |
 
-> **Note:** Blob files accumulate after rooms expire (Redis key is deleted but the blob file stays). For a high-traffic app, add a Vercel Cron to periodically clean orphaned blobs. For personal/low-traffic use, the 500 MB free tier lasts a long time.
+---
+
+## Cleanup
+
+Expired rooms are cleaned up **lazily** — when an expired room is accessed, the API automatically deletes:
+- The room row from Postgres
+- All associated files from Supabase Storage
+
+No cron job needed.

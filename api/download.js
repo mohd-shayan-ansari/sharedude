@@ -1,43 +1,40 @@
-const { Redis } = require('@upstash/redis');
-
-const redis = Redis.fromEnv();
+const { supabase, BUCKET } = require('../lib/supabase');
 
 module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
   if (req.method === 'OPTIONS') return res.status(200).end();
-
-  if (req.method !== 'GET') {
-    return res.status(405).json({ error: 'Method not allowed' });
-  }
+  if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
 
   const { code, file } = req.query;
-  if (!code || !file) {
-    return res.status(400).json({ error: 'Missing code or file parameter.' });
-  }
+  if (!code || !file) return res.status(400).json({ error: 'Missing code or file parameter.' });
 
-  const raw = await redis.get(`room:${code}`);
-  if (!raw) {
-    return res.status(404).json({ success: false, error: 'Room not found or has expired.' });
-  }
+  // Validate room is alive
+  const { data: room } = await supabase
+    .from('rooms')
+    .select('files, expires_at')
+    .eq('code', code)
+    .maybeSingle();
 
-  const roomData = typeof raw === 'string' ? JSON.parse(raw) : raw;
+  if (!room) return res.status(404).json({ success: false, error: 'Room not found or has expired.' });
+  if (Date.now() >= room.expires_at) return res.status(410).json({ success: false, error: 'Room has expired.' });
 
-  if (Date.now() >= roomData.expiresAt) {
-    return res.status(410).json({ success: false, error: 'Room has expired.' });
-  }
-
-  // Find matching file (by safe name or original name)
-  const fileInfo = roomData.files.find(
-    (f) => f.name === file || f.originalName === file || decodeURIComponent(file) === f.name
+  // Find the file entry
+  const fileInfo = (room.files || []).find(
+    f => f.name === file || f.originalName === file
   );
+  if (!fileInfo) return res.status(404).json({ success: false, error: 'File not found in this room.' });
 
-  if (!fileInfo || !fileInfo.url) {
-    return res.status(404).json({ success: false, error: 'File not found in this room.' });
+  // Create a short-lived signed download URL (60 seconds — just enough for the browser to start the download)
+  const { data, error } = await supabase.storage
+    .from(BUCKET)
+    .createSignedUrl(`rooms/${code}/${fileInfo.name}`, 60);
+
+  if (error || !data) {
+    return res.status(500).json({ success: false, error: 'Could not generate download link.' });
   }
 
-  // Redirect browser directly to the Vercel Blob CDN URL
-  // This triggers a native download in the browser
+  // Redirect browser to the CDN URL — triggers a native download
   res.setHeader('Content-Disposition', `attachment; filename="${fileInfo.originalName || fileInfo.name}"`);
-  res.redirect(302, fileInfo.url);
+  return res.redirect(302, data.signedUrl);
 };
