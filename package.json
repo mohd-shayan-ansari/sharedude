@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "Temporary room-based file sharing — files auto-delete after 5 minutes",
   "dependencies": {
-    "@supabase/supabase-js": "^2.45.4"
+    "@supabase/supabase-js": "^2.45.4",
+    "dotenv": "^17.4.2"
   }
 }
