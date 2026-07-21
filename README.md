@@ -1,4 +1,4 @@
-# ShareDrop — Vercel + Supabase Deployment Guide
+# ShareDude — Vercel + Supabase Deployment Guide
 
 One free account (Supabase) handles everything: file storage + room state database.
 
