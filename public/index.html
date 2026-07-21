@@ -1,0 +1,1361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ShareDrop — Instant File Sharing</title>
+  <meta name="description" content="ShareDrop lets you share files instantly via a room code. Files auto-delete after 5 minutes — no sign-up needed." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    /* ─── Reset & Base ─── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg-deep:      #0a0a14;
+      --bg-mid:       #0f0f1e;
+      --bg-card:      rgba(255,255,255,0.04);
+      --bg-card-hover:rgba(255,255,255,0.07);
+      --border:       rgba(255,255,255,0.08);
+      --border-glow:  rgba(139,92,246,0.5);
+      --accent:       #8b5cf6;
+      --accent-2:     #06b6d4;
+      --accent-grad:  linear-gradient(135deg, #8b5cf6, #06b6d4);
+      --danger:       #ef4444;
+      --success:      #22c55e;
+      --text-1:       #f1f5f9;
+      --text-2:       #94a3b8;
+      --text-3:       #475569;
+      --radius-sm:    10px;
+      --radius-md:    16px;
+      --radius-lg:    24px;
+      --shadow-card:  0 8px 32px rgba(0,0,0,0.4);
+      --shadow-glow:  0 0 40px rgba(139,92,246,0.15);
+      --transition:   all 0.25s cubic-bezier(0.4,0,0.2,1);
+    }
+
+    html, body {
+      min-height: 100vh;
+      font-family: 'Inter', system-ui, sans-serif;
+      background: var(--bg-deep);
+      color: var(--text-1);
+      overflow-x: hidden;
+    }
+
+    /* ─── Animated Background ─── */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 80% 60% at 20% 10%, rgba(139,92,246,0.12) 0%, transparent 60%),
+        radial-gradient(ellipse 60% 50% at 80% 80%, rgba(6,182,212,0.10) 0%, transparent 60%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ─── Floating Orbs ─── */
+    .orb {
+      position: fixed;
+      border-radius: 50%;
+      filter: blur(80px);
+      pointer-events: none;
+      z-index: 0;
+      animation: orb-float 8s ease-in-out infinite alternate;
+    }
+    .orb-1 { width: 400px; height: 400px; background: rgba(139,92,246,0.08); top: -100px; left: -100px; animation-delay: 0s; }
+    .orb-2 { width: 300px; height: 300px; background: rgba(6,182,212,0.07); bottom: -50px; right: -50px; animation-delay: -4s; }
+    @keyframes orb-float { from { transform: translate(0,0) scale(1); } to { transform: translate(30px,20px) scale(1.1); } }
+
+    /* ─── Layout ─── */
+    .app { position: relative; z-index: 1; min-height: 100vh; display: flex; flex-direction: column; }
+
+    /* ─── Header ─── */
+    header {
+      padding: 24px 32px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      border-bottom: 1px solid var(--border);
+      backdrop-filter: blur(20px);
+      background: rgba(10,10,20,0.6);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      text-decoration: none;
+    }
+    .logo-icon {
+      width: 36px;
+      height: 36px;
+      background: var(--accent-grad);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+    }
+    .logo-text {
+      font-size: 20px;
+      font-weight: 800;
+      background: var(--accent-grad);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .logo-tagline {
+      font-size: 12px;
+      color: var(--text-3);
+      margin-left: auto;
+      font-weight: 400;
+    }
+
+    /* ─── Main Content ─── */
+    main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      padding: 48px 16px 64px;
+    }
+
+    /* ─── Hero Section ─── */
+    .hero { text-align: center; margin-bottom: 48px; }
+    .hero h1 {
+      font-size: clamp(2rem, 5vw, 3.2rem);
+      font-weight: 800;
+      line-height: 1.15;
+      margin-bottom: 14px;
+      background: linear-gradient(135deg, #fff 40%, #94a3b8);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .hero p {
+      font-size: 1.05rem;
+      color: var(--text-2);
+      max-width: 480px;
+      margin: 0 auto;
+      line-height: 1.6;
+    }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(139,92,246,0.15);
+      border: 1px solid rgba(139,92,246,0.3);
+      color: #c4b5fd;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 4px 12px;
+      border-radius: 100px;
+      margin-bottom: 20px;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+
+    /* ─── Choice Cards ─── */
+    .choice-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      width: 100%;
+      max-width: 560px;
+      margin-bottom: 48px;
+    }
+    .choice-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 32px 24px;
+      cursor: pointer;
+      transition: var(--transition);
+      text-align: center;
+      backdrop-filter: blur(12px);
+      position: relative;
+      overflow: hidden;
+    }
+    .choice-card::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+    .choice-card.send::before { background: radial-gradient(circle at 50% 0%, rgba(139,92,246,0.2), transparent 60%); }
+    .choice-card.receive::before { background: radial-gradient(circle at 50% 0%, rgba(6,182,212,0.2), transparent 60%); }
+    .choice-card:hover { border-color: var(--border-glow); transform: translateY(-4px); box-shadow: var(--shadow-glow); background: var(--bg-card-hover); }
+    .choice-card:hover::before { opacity: 1; }
+    .choice-card:active { transform: translateY(-2px); }
+    .choice-icon {
+      width: 64px; height: 64px;
+      border-radius: 18px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 30px;
+      margin: 0 auto 16px;
+    }
+    .send .choice-icon { background: rgba(139,92,246,0.15); }
+    .receive .choice-icon { background: rgba(6,182,212,0.15); }
+    .choice-card h2 { font-size: 1.3rem; font-weight: 700; margin-bottom: 8px; }
+    .choice-card p { font-size: 0.875rem; color: var(--text-2); line-height: 1.5; }
+
+    /* ─── Panels ─── */
+    .panel {
+      width: 100%;
+      max-width: 620px;
+      display: none;
+      animation: panel-in 0.4s cubic-bezier(0.4,0,0.2,1) forwards;
+    }
+    .panel.active { display: block; }
+    @keyframes panel-in { from { opacity:0; transform: translateY(20px); } to { opacity:1; transform: translateY(0); } }
+
+    .panel-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 32px;
+      backdrop-filter: blur(20px);
+      box-shadow: var(--shadow-card);
+      margin-bottom: 20px;
+    }
+
+    .panel-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 28px;
+    }
+    .back-btn {
+      width: 36px; height: 36px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: var(--bg-card);
+      color: var(--text-2);
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px;
+      transition: var(--transition);
+      flex-shrink: 0;
+    }
+    .back-btn:hover { border-color: var(--border-glow); color: var(--text-1); background: var(--bg-card-hover); }
+    .panel-title { font-size: 1.4rem; font-weight: 700; }
+    .panel-subtitle { font-size: 0.875rem; color: var(--text-2); margin-top: 2px; }
+
+    /* ─── Step Indicators ─── */
+    .steps {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 28px;
+    }
+    .step-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: var(--text-3);
+      transition: var(--transition);
+    }
+    .step-dot.active { background: var(--accent); width: 24px; border-radius: 4px; }
+    .step-dot.done { background: var(--success); }
+
+    /* ─── Drop Zone ─── */
+    .drop-zone {
+      border: 2px dashed var(--border);
+      border-radius: var(--radius-md);
+      padding: 40px 24px;
+      text-align: center;
+      cursor: pointer;
+      transition: var(--transition);
+      position: relative;
+      background: rgba(255,255,255,0.02);
+      margin-bottom: 20px;
+    }
+    .drop-zone:hover, .drop-zone.drag-over {
+      border-color: var(--accent);
+      background: rgba(139,92,246,0.06);
+    }
+    .drop-zone.drag-over { transform: scale(1.01); }
+    .drop-zone input[type="file"] {
+      position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%;
+    }
+    .drop-icon { font-size: 48px; margin-bottom: 12px; line-height: 1; }
+    .drop-text { font-size: 1rem; font-weight: 600; color: var(--text-1); margin-bottom: 6px; }
+    .drop-sub { font-size: 0.8rem; color: var(--text-3); }
+
+    /* ─── File List ─── */
+    .file-list { list-style: none; display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px; }
+    .file-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 12px 14px;
+      transition: var(--transition);
+      animation: item-in 0.3s ease forwards;
+    }
+    @keyframes item-in { from { opacity:0; transform: translateX(-10px); } to { opacity:1; transform: none; } }
+    .file-item:hover { border-color: rgba(139,92,246,0.3); background: rgba(139,92,246,0.05); }
+    .file-emoji { font-size: 22px; width: 36px; text-align: center; flex-shrink: 0; }
+    .file-info { flex: 1; min-width: 0; }
+    .file-name { font-size: 0.875rem; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .file-size { font-size: 0.75rem; color: var(--text-3); margin-top: 2px; }
+    .file-remove {
+      width: 28px; height: 28px;
+      border-radius: 7px;
+      border: none;
+      background: rgba(239,68,68,0.1);
+      color: var(--danger);
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 14px;
+      transition: var(--transition);
+      flex-shrink: 0;
+    }
+    .file-remove:hover { background: rgba(239,68,68,0.25); }
+
+    .file-count-info {
+      text-align: center;
+      font-size: 0.8rem;
+      color: var(--text-3);
+      margin-bottom: 16px;
+    }
+    .file-count-info span { color: var(--accent); font-weight: 600; }
+
+    /* ─── Buttons ─── */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 13px 24px;
+      border-radius: var(--radius-sm);
+      font-size: 0.9rem;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+      border: none;
+      transition: var(--transition);
+      width: 100%;
+      letter-spacing: 0.01em;
+    }
+    .btn-primary {
+      background: var(--accent-grad);
+      color: #fff;
+      box-shadow: 0 4px 20px rgba(139,92,246,0.3);
+    }
+    .btn-primary:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 8px 28px rgba(139,92,246,0.45); filter: brightness(1.1); }
+    .btn-primary:active:not(:disabled) { transform: translateY(0); }
+    .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
+    .btn-secondary {
+      background: var(--bg-card);
+      color: var(--text-1);
+      border: 1px solid var(--border);
+    }
+    .btn-secondary:hover { border-color: var(--border-glow); background: var(--bg-card-hover); }
+    .btn-cyan {
+      background: linear-gradient(135deg, #0891b2, #06b6d4);
+      color: #fff;
+      box-shadow: 0 4px 20px rgba(6,182,212,0.3);
+    }
+    .btn-cyan:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 8px 28px rgba(6,182,212,0.4); filter: brightness(1.1); }
+    .btn-cyan:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    /* ─── Input ─── */
+    .input-group { margin-bottom: 16px; }
+    .input-label { display: block; font-size: 0.8rem; font-weight: 600; color: var(--text-2); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.05em; }
+    .input-field {
+      width: 100%;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 13px 16px;
+      font-size: 1rem;
+      font-family: inherit;
+      color: var(--text-1);
+      outline: none;
+      transition: var(--transition);
+      letter-spacing: 0.05em;
+    }
+    .input-field::placeholder { color: var(--text-3); letter-spacing: 0; }
+    .input-field:focus { border-color: var(--accent); background: rgba(139,92,246,0.06); box-shadow: 0 0 0 3px rgba(139,92,246,0.12); }
+
+    /* ─── Room Code Display ─── */
+    .room-code-block {
+      background: rgba(139,92,246,0.08);
+      border: 1px solid rgba(139,92,246,0.25);
+      border-radius: var(--radius-md);
+      padding: 24px;
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    .room-code-label { font-size: 0.75rem; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.1em; font-weight: 600; margin-bottom: 10px; }
+    .room-code-value {
+      font-size: 2.8rem;
+      font-weight: 800;
+      letter-spacing: 0.25em;
+      background: var(--accent-grad);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 14px;
+    }
+    .copy-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 18px;
+      border-radius: 8px;
+      border: 1px solid rgba(139,92,246,0.3);
+      background: rgba(139,92,246,0.12);
+      color: #c4b5fd;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: inherit;
+      transition: var(--transition);
+    }
+    .copy-btn:hover { background: rgba(139,92,246,0.25); }
+    .copy-btn.copied { color: var(--success); border-color: rgba(34,197,94,0.3); background: rgba(34,197,94,0.1); }
+
+    /* ─── Countdown Timer ─── */
+    .timer-block {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 16px 20px;
+      margin-bottom: 20px;
+    }
+    .timer-ring {
+      position: relative;
+      width: 56px;
+      height: 56px;
+      flex-shrink: 0;
+    }
+    .timer-ring svg { transform: rotate(-90deg); }
+    .timer-ring-bg { fill: none; stroke: rgba(255,255,255,0.06); stroke-width: 4; }
+    .timer-ring-fill {
+      fill: none;
+      stroke: url(#timerGrad);
+      stroke-width: 4;
+      stroke-linecap: round;
+      stroke-dasharray: 138.23;
+      stroke-dashoffset: 0;
+      transition: stroke-dashoffset 1s linear;
+    }
+    .timer-ring-text {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--text-1);
+    }
+    .timer-info { flex: 1; }
+    .timer-label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-3); font-weight: 600; margin-bottom: 4px; }
+    .timer-value { font-size: 1.4rem; font-weight: 700; color: var(--text-1); font-variant-numeric: tabular-nums; }
+    .timer-sub { font-size: 0.75rem; color: var(--text-3); margin-top: 2px; }
+    .timer-warning .timer-value { color: #f59e0b; }
+    .timer-critical .timer-value { color: var(--danger); }
+
+    /* ─── Receive: File Selector ─── */
+    .receive-file-list { list-style: none; display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px; }
+    .receive-file-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 12px 14px;
+      cursor: pointer;
+      transition: var(--transition);
+    }
+    .receive-file-item:hover { border-color: rgba(6,182,212,0.3); background: rgba(6,182,212,0.05); }
+    .receive-file-item.selected { border-color: rgba(6,182,212,0.5); background: rgba(6,182,212,0.08); }
+    .file-checkbox {
+      width: 20px; height: 20px;
+      border-radius: 6px;
+      border: 2px solid var(--border);
+      background: transparent;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+      transition: var(--transition);
+      font-size: 12px;
+    }
+    .receive-file-item.selected .file-checkbox { background: var(--accent-2); border-color: var(--accent-2); }
+
+    .select-all-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+    .select-all-btn {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--accent-2);
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-family: inherit;
+      padding: 4px 0;
+      transition: var(--transition);
+    }
+    .select-all-btn:hover { opacity: 0.7; }
+    .selected-count { font-size: 0.8rem; color: var(--text-3); }
+
+    /* ─── Alert / Toast ─── */
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%) translateY(100px);
+      background: #1e1e2e;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px 20px;
+      font-size: 0.875rem;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      z-index: 999;
+      transition: transform 0.3s cubic-bezier(0.4,0,0.2,1), opacity 0.3s;
+      opacity: 0;
+      min-width: 260px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+      white-space: nowrap;
+    }
+    .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+    .toast.success { border-color: rgba(34,197,94,0.3); }
+    .toast.error { border-color: rgba(239,68,68,0.3); }
+
+    /* ─── Loading Spinner ─── */
+    .spinner {
+      width: 18px; height: 18px;
+      border: 2px solid rgba(255,255,255,0.2);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      flex-shrink: 0;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ─── Upload Progress ─── */
+    .upload-progress {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 20px;
+      margin-bottom: 20px;
+      display: none;
+    }
+    .upload-progress.visible { display: block; }
+    .progress-label { font-size: 0.8rem; color: var(--text-2); margin-bottom: 10px; display: flex; justify-content: space-between; }
+    .progress-bar-wrap { background: rgba(255,255,255,0.06); border-radius: 100px; height: 6px; overflow: hidden; }
+    .progress-bar-fill {
+      height: 100%;
+      background: var(--accent-grad);
+      border-radius: 100px;
+      width: 0%;
+      transition: width 0.3s ease;
+    }
+
+    /* ─── Info Banner ─── */
+    .info-banner {
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+      background: rgba(139,92,246,0.08);
+      border: 1px solid rgba(139,92,246,0.2);
+      border-radius: var(--radius-sm);
+      padding: 14px 16px;
+      font-size: 0.825rem;
+      color: var(--text-2);
+      line-height: 1.5;
+      margin-bottom: 20px;
+    }
+    .info-banner span { flex-shrink: 0; }
+
+    /* ─── How It Works ─── */
+    .how-section { width: 100%; max-width: 620px; margin-top: 12px; }
+    .how-title { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-3); font-weight: 600; text-align: center; margin-bottom: 16px; }
+    .how-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+    .how-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 18px 14px;
+      text-align: center;
+    }
+    .how-num { font-size: 10px; font-weight: 700; color: var(--accent); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 8px; }
+    .how-emoji { font-size: 24px; margin-bottom: 8px; }
+    .how-desc { font-size: 0.78rem; color: var(--text-2); line-height: 1.5; }
+
+    /* ─── Divider ─── */
+    .divider { height: 1px; background: var(--border); margin: 20px 0; }
+
+    /* ─── Expired State ─── */
+    .expired-state {
+      text-align: center;
+      padding: 40px 24px;
+    }
+    .expired-icon { font-size: 56px; margin-bottom: 16px; }
+    .expired-title { font-size: 1.3rem; font-weight: 700; margin-bottom: 8px; }
+    .expired-desc { font-size: 0.875rem; color: var(--text-2); }
+
+    /* ─── Responsive ─── */
+    @media (max-width: 580px) {
+      header { padding: 16px 20px; }
+      main { padding: 32px 12px 48px; }
+      .choice-grid { grid-template-columns: 1fr; max-width: 340px; }
+      .panel-card { padding: 20px; }
+      .room-code-value { font-size: 2rem; letter-spacing: 0.2em; }
+      .how-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+<div class="app">
+
+  <!-- Floating orbs -->
+  <div class="orb orb-1"></div>
+  <div class="orb orb-2"></div>
+
+  <!-- Header -->
+  <header>
+    <a class="logo" href="#" onclick="goHome(); return false;">
+      <div class="logo-icon">📦</div>
+      <span class="logo-text">ShareDrop</span>
+    </a>
+    <span class="logo-tagline">Files vanish in 5 min · No sign-up</span>
+  </header>
+
+  <main>
+
+    <!-- ════════════ HOME ════════════ -->
+    <section id="home-section">
+      <div class="hero">
+        <div class="badge">⚡ Instant · Secure · Ephemeral</div>
+        <h1>Drop files.<br>Share instantly.</h1>
+        <p>Create a private room, share the code, and let anyone grab your files. Everything vanishes in 5 minutes.</p>
+      </div>
+
+      <div class="choice-grid">
+        <div class="choice-card send" id="send-btn" onclick="showSend()" tabindex="0" role="button" aria-label="Send files">
+          <div class="choice-icon">📤</div>
+          <h2>Send</h2>
+          <p>Upload files and get a room code to share</p>
+        </div>
+        <div class="choice-card receive" id="receive-btn" onclick="showReceive()" tabindex="0" role="button" aria-label="Receive files">
+          <div class="choice-icon">📥</div>
+          <h2>Receive</h2>
+          <p>Enter a room code and download files</p>
+        </div>
+      </div>
+
+      <div class="how-section">
+        <div class="how-title">How it works</div>
+        <div class="how-grid">
+          <div class="how-card">
+            <div class="how-num">Step 1</div>
+            <div class="how-emoji">📤</div>
+            <div class="how-desc">Sender uploads files & gets a 6-char room code</div>
+          </div>
+          <div class="how-card">
+            <div class="how-num">Step 2</div>
+            <div class="how-emoji">💬</div>
+            <div class="how-desc">Share the code with your receiver via any channel</div>
+          </div>
+          <div class="how-card">
+            <div class="how-num">Step 3</div>
+            <div class="how-emoji">⬇️</div>
+            <div class="how-desc">Receiver enters code & downloads selected files</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ════════════ SEND PANEL ════════════ -->
+    <section id="send-panel" class="panel">
+      <div class="panel-card">
+        <div class="panel-header">
+          <button class="back-btn" onclick="goHome()" title="Go back" aria-label="Back to home">←</button>
+          <div>
+            <div class="panel-title">📤 Send Files</div>
+            <div class="panel-subtitle">Select up to 10 files to share</div>
+          </div>
+        </div>
+
+        <!-- Step dots -->
+        <div class="steps" id="send-steps">
+          <div class="step-dot active" id="sdot-1"></div>
+          <div class="step-dot" id="sdot-2"></div>
+          <div class="step-dot" id="sdot-3"></div>
+        </div>
+
+        <!-- Step 1: Select Files -->
+        <div id="send-step-1">
+          <div class="drop-zone" id="drop-zone">
+            <input type="file" id="file-input" multiple accept="*/*" aria-label="Select files" />
+            <div class="drop-icon">📂</div>
+            <div class="drop-text">Drop files here or click to browse</div>
+            <div class="drop-sub">Up to 10 files · 100 MB each</div>
+          </div>
+          <ul class="file-list" id="file-list"></ul>
+          <div class="file-count-info" id="file-count-info" style="display:none">
+            <span id="file-count-text">0</span> / 10 files selected
+          </div>
+          <button class="btn btn-primary" id="next-to-create-btn" onclick="goToStep2()" disabled>
+            Continue →
+          </button>
+        </div>
+
+        <!-- Step 2: Create Room -->
+        <div id="send-step-2" style="display:none">
+          <div class="info-banner">
+            <span>💡</span>
+            <span>A unique room code will be generated. Share it with your receiver so they can download the files.</span>
+          </div>
+          <div class="upload-progress" id="upload-progress">
+            <div class="progress-label">
+              <span>Uploading files…</span>
+              <span id="progress-pct">0%</span>
+            </div>
+            <div class="progress-bar-wrap">
+              <div class="progress-bar-fill" id="progress-bar"></div>
+            </div>
+          </div>
+          <button class="btn btn-primary" id="create-room-btn" onclick="createRoomAndUpload()">
+            🚀 Create Room &amp; Upload
+          </button>
+        </div>
+
+        <!-- Step 3: Room Created -->
+        <div id="send-step-3" style="display:none">
+          <div class="room-code-block">
+            <div class="room-code-label">Room Code — Share this!</div>
+            <div class="room-code-value" id="display-room-code">------</div>
+            <button class="copy-btn" id="copy-code-btn" onclick="copyRoomCode()">
+              📋 Copy Code
+            </button>
+          </div>
+
+          <div class="timer-block" id="sender-timer">
+            <div class="timer-ring">
+              <svg viewBox="0 0 48 48" width="56" height="56">
+                <defs>
+                  <linearGradient id="timerGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stop-color="#8b5cf6"/>
+                    <stop offset="100%" stop-color="#06b6d4"/>
+                  </linearGradient>
+                </defs>
+                <circle class="timer-ring-bg" cx="24" cy="24" r="22"/>
+                <circle class="timer-ring-fill" id="timer-ring-fill" cx="24" cy="24" r="22"/>
+              </svg>
+              <div class="timer-ring-text" id="timer-ring-text">5:00</div>
+            </div>
+            <div class="timer-info">
+              <div class="timer-label">Auto-deletes in</div>
+              <div class="timer-value" id="timer-display">5:00</div>
+              <div class="timer-sub">Files are permanently deleted after expiry</div>
+            </div>
+          </div>
+
+          <div class="info-banner" style="background:rgba(34,197,94,0.06); border-color:rgba(34,197,94,0.2);">
+            <span>✅</span>
+            <span>Room is live! Tell your receiver the code above. They can download from the <strong>Receive</strong> tab.</span>
+          </div>
+
+          <button class="btn btn-secondary" onclick="goHome()" style="margin-top:4px">
+            ← Share Another
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ════════════ RECEIVE PANEL ════════════ -->
+    <section id="receive-panel" class="panel">
+      <div class="panel-card">
+        <div class="panel-header">
+          <button class="back-btn" onclick="goHome()" title="Go back" aria-label="Back to home">←</button>
+          <div>
+            <div class="panel-title">📥 Receive Files</div>
+            <div class="panel-subtitle">Enter the room code from the sender</div>
+          </div>
+        </div>
+
+        <!-- Enter Room Code -->
+        <div id="receive-step-1">
+          <div class="input-group">
+            <label class="input-label" for="room-code-input">Room Code</label>
+            <input
+              class="input-field"
+              type="text"
+              id="room-code-input"
+              placeholder="e.g. XK9M2A"
+              maxlength="6"
+              autocomplete="off"
+              autocapitalize="characters"
+              spellcheck="false"
+              aria-label="Enter room code"
+              oninput="this.value = this.value.toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,6); checkRoomCodeInput()"
+              onkeydown="if(event.key==='Enter') joinRoom()"
+            />
+          </div>
+          <button class="btn btn-cyan" id="join-room-btn" onclick="joinRoom()" disabled>
+            🔍 Find Room
+          </button>
+        </div>
+
+        <!-- File List -->
+        <div id="receive-step-2" style="display:none">
+          <div class="timer-block" id="receiver-timer">
+            <div class="timer-ring">
+              <svg viewBox="0 0 48 48" width="56" height="56">
+                <defs>
+                  <linearGradient id="timerGrad2" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stop-color="#8b5cf6"/>
+                    <stop offset="100%" stop-color="#06b6d4"/>
+                  </linearGradient>
+                </defs>
+                <circle class="timer-ring-bg" cx="24" cy="24" r="22"/>
+                <circle class="timer-ring-fill" id="timer-ring-fill-r" cx="24" cy="24" r="22"/>
+              </svg>
+              <div class="timer-ring-text" id="timer-ring-text-r">--:--</div>
+            </div>
+            <div class="timer-info">
+              <div class="timer-label">Expires in</div>
+              <div class="timer-value" id="timer-display-r">--:--</div>
+              <div class="timer-sub">Download before it disappears!</div>
+            </div>
+          </div>
+
+          <div class="select-all-bar">
+            <span class="selected-count" id="selected-count">0 files selected</span>
+            <button class="select-all-btn" id="select-all-btn" onclick="toggleSelectAll()">Select All</button>
+          </div>
+
+          <ul class="receive-file-list" id="receive-file-list"></ul>
+
+          <div class="divider"></div>
+
+          <button class="btn btn-cyan" id="download-btn" onclick="downloadSelected()" disabled>
+            ⬇️ Download Selected
+          </button>
+          <button class="btn btn-secondary" onclick="resetReceive()" style="margin-top:10px">
+            ← Try Another Code
+          </button>
+        </div>
+
+        <!-- Expired State -->
+        <div id="receive-expired" style="display:none">
+          <div class="expired-state">
+            <div class="expired-icon">⌛</div>
+            <div class="expired-title">Room Expired or Not Found</div>
+            <div class="expired-desc">This room doesn't exist or has already been deleted.<br>Ask the sender to create a new one.</div>
+          </div>
+          <button class="btn btn-secondary" onclick="resetReceive()" style="margin-top:8px">← Try Another Code</button>
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+  // ═══════════════════════════════════════════
+  //  Utility
+  // ═══════════════════════════════════════════
+  function show(id) { document.getElementById(id).style.display = ''; }
+  function hide(id) { document.getElementById(id).style.display = 'none'; }
+
+  function showToast(msg, type = 'info', dur = 3000) {
+    const t = document.getElementById('toast');
+    const icons = { success: '✅', error: '❌', info: 'ℹ️' };
+    t.innerHTML = `<span>${icons[type]||'ℹ️'}</span><span>${msg}</span>`;
+    t.className = `toast show ${type}`;
+    clearTimeout(t._timer);
+    t._timer = setTimeout(() => t.classList.remove('show'), dur);
+  }
+
+  function formatBytes(b) {
+    if (b < 1024) return b + ' B';
+    if (b < 1024 * 1024) return (b / 1024).toFixed(1) + ' KB';
+    return (b / (1024 * 1024)).toFixed(1) + ' MB';
+  }
+
+  function formatTime(ms) {
+    const totalSec = Math.max(0, Math.floor(ms / 1000));
+    const m = Math.floor(totalSec / 60);
+    const s = totalSec % 60;
+    return `${m}:${s.toString().padStart(2, '0')}`;
+  }
+
+  function fileEmoji(name) {
+    const ext = name.split('.').pop().toLowerCase();
+    const map = {
+      pdf: '📄', doc: '📝', docx: '📝', xls: '📊', xlsx: '📊',
+      ppt: '📑', pptx: '📑', txt: '📃', md: '📃',
+      jpg: '🖼️', jpeg: '🖼️', png: '🖼️', gif: '🖼️', svg: '🖼️', webp: '🖼️',
+      mp4: '🎬', mov: '🎬', avi: '🎬', mkv: '🎬', webm: '🎬',
+      mp3: '🎵', wav: '🎵', flac: '🎵', aac: '🎵',
+      zip: '🗜️', rar: '🗜️', '7z': '🗜️', tar: '🗜️', gz: '🗜️',
+      js: '⚙️', ts: '⚙️', py: '🐍', java: '☕', json: '📋',
+      html: '🌐', css: '🎨', php: '🐘',
+      exe: '💻', msi: '💻', dmg: '💻',
+    };
+    return map[ext] || '📁';
+  }
+
+  // ═══════════════════════════════════════════
+  //  Navigation
+  // ═══════════════════════════════════════════
+  function goHome() {
+    hide('send-panel');
+    hide('receive-panel');
+    show('home-section');
+    resetSend();
+    resetReceive();
+    stopTimer();
+  }
+
+  function showSend() {
+    hide('home-section');
+    hide('receive-panel');
+    show('send-panel');
+    document.getElementById('send-panel').classList.add('active');
+  }
+
+  function showReceive() {
+    hide('home-section');
+    hide('send-panel');
+    show('receive-panel');
+    document.getElementById('receive-panel').classList.add('active');
+  }
+
+  // ═══════════════════════════════════════════
+  //  Send Flow
+  // ═══════════════════════════════════════════
+  let selectedFiles = [];
+  let currentRoomCode = null;
+  let timerInterval = null;
+  let expiresAt = null;
+
+  // Drag & Drop
+  const dropZone = document.getElementById('drop-zone');
+  const fileInput = document.getElementById('file-input');
+
+  dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+  dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+  dropZone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    dropZone.classList.remove('drag-over');
+    handleFiles(Array.from(e.dataTransfer.files));
+  });
+  fileInput.addEventListener('change', () => handleFiles(Array.from(fileInput.files)));
+
+  function handleFiles(newFiles) {
+    const remaining = 10 - selectedFiles.length;
+    if (remaining <= 0) { showToast('Max 10 files reached', 'error'); return; }
+    const toAdd = newFiles.slice(0, remaining);
+    if (newFiles.length > remaining) showToast(`Only ${remaining} more file(s) can be added`, 'info');
+
+    // Check duplicates
+    const names = selectedFiles.map(f => f.name);
+    const unique = toAdd.filter(f => {
+      if (names.includes(f.name)) { showToast(`"${f.name}" already added`, 'info'); return false; }
+      return true;
+    });
+
+    selectedFiles = [...selectedFiles, ...unique];
+    renderFileList();
+    fileInput.value = '';
+  }
+
+  function renderFileList() {
+    const list = document.getElementById('file-list');
+    const info = document.getElementById('file-count-info');
+    const nextBtn = document.getElementById('next-to-create-btn');
+
+    list.innerHTML = '';
+    selectedFiles.forEach((f, i) => {
+      const li = document.createElement('li');
+      li.className = 'file-item';
+      li.innerHTML = `
+        <span class="file-emoji">${fileEmoji(f.name)}</span>
+        <div class="file-info">
+          <div class="file-name">${escapeHtml(f.name)}</div>
+          <div class="file-size">${formatBytes(f.size)}</div>
+        </div>
+        <button class="file-remove" onclick="removeFile(${i})" title="Remove" aria-label="Remove ${escapeHtml(f.name)}">✕</button>
+      `;
+      list.appendChild(li);
+    });
+
+    if (selectedFiles.length > 0) {
+      document.getElementById('file-count-text').textContent = selectedFiles.length;
+      info.style.display = 'block';
+    } else {
+      info.style.display = 'none';
+    }
+
+    nextBtn.disabled = selectedFiles.length === 0;
+  }
+
+  function removeFile(i) {
+    selectedFiles.splice(i, 1);
+    renderFileList();
+  }
+
+  function escapeHtml(str) {
+    return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  function goToStep2() {
+    hide('send-step-1');
+    show('send-step-2');
+    updateStepDots(2);
+  }
+
+  function updateStepDots(active) {
+    for (let i = 1; i <= 3; i++) {
+      const dot = document.getElementById(`sdot-${i}`);
+      dot.className = 'step-dot' + (i < active ? ' done' : i === active ? ' active' : '');
+    }
+  }
+
+  async function createRoomAndUpload() {
+    const btn = document.getElementById('create-room-btn');
+    btn.disabled = true;
+    btn.innerHTML = '<div class="spinner"></div> Creating room…';
+
+    try {
+      // 1. Create room
+      const roomRes = await fetch('/api/create-room', { method: 'POST' });
+      const roomData = await roomRes.json();
+      if (!roomData.success) throw new Error(roomData.error || 'Failed to create room');
+
+      currentRoomCode = roomData.roomCode;
+      expiresAt = roomData.expiresAt;
+
+      // 2. Upload files with XHR for progress
+      btn.innerHTML = '<div class="spinner"></div> Uploading…';
+      const progressEl = document.getElementById('upload-progress');
+      progressEl.classList.add('visible');
+
+      await uploadFiles(currentRoomCode);
+
+      // 3. Show success
+      document.getElementById('display-room-code').textContent = currentRoomCode;
+      hide('send-step-2');
+      show('send-step-3');
+      updateStepDots(3);
+      startTimer(expiresAt, 'sender');
+      showToast('Room created! Share the code.', 'success');
+
+    } catch (err) {
+      showToast(err.message || 'Something went wrong', 'error');
+      btn.disabled = false;
+      btn.innerHTML = '🚀 Create Room & Upload';
+    }
+  }
+
+  function uploadFiles(roomCode) {
+    return new Promise((resolve, reject) => {
+      const formData = new FormData();
+      selectedFiles.forEach(f => formData.append('files', f));
+
+      const xhr = new XMLHttpRequest();
+      xhr.open('POST', `/api/upload/${roomCode}`);
+
+      xhr.upload.onprogress = (e) => {
+        if (e.lengthComputable) {
+          const pct = Math.round((e.loaded / e.total) * 100);
+          document.getElementById('progress-bar').style.width = pct + '%';
+          document.getElementById('progress-pct').textContent = pct + '%';
+        }
+      };
+
+      xhr.onload = () => {
+        try {
+          const data = JSON.parse(xhr.responseText);
+          if (data.success) resolve(data);
+          else reject(new Error(data.error || 'Upload failed'));
+        } catch { reject(new Error('Upload failed')); }
+      };
+
+      xhr.onerror = () => reject(new Error('Network error during upload'));
+      xhr.send(formData);
+    });
+  }
+
+  function copyRoomCode() {
+    const code = currentRoomCode;
+    if (!code) return;
+    navigator.clipboard.writeText(code).then(() => {
+      const btn = document.getElementById('copy-code-btn');
+      btn.textContent = '✓ Copied!';
+      btn.classList.add('copied');
+      setTimeout(() => { btn.textContent = '📋 Copy Code'; btn.classList.remove('copied'); }, 2000);
+    }).catch(() => showToast('Could not copy — please copy manually', 'error'));
+  }
+
+  function resetSend() {
+    selectedFiles = [];
+    currentRoomCode = null;
+    renderFileList();
+    show('send-step-1');
+    hide('send-step-2');
+    hide('send-step-3');
+    updateStepDots(1);
+    document.getElementById('next-to-create-btn').disabled = true;
+    document.getElementById('create-room-btn').disabled = false;
+    document.getElementById('create-room-btn').innerHTML = '🚀 Create Room &amp; Upload';
+    document.getElementById('upload-progress').classList.remove('visible');
+    document.getElementById('progress-bar').style.width = '0%';
+    document.getElementById('progress-pct').textContent = '0%';
+    document.getElementById('send-panel').classList.remove('active');
+  }
+
+  // ═══════════════════════════════════════════
+  //  Countdown Timer
+  // ═══════════════════════════════════════════
+  const TOTAL_TTL = 5 * 60 * 1000;
+  const CIRCUMFERENCE = 2 * Math.PI * 22; // 138.23
+
+  function startTimer(expiry, side) {
+    stopTimer();
+    expiresAt = expiry;
+
+    const fillId = side === 'sender' ? 'timer-ring-fill' : 'timer-ring-fill-r';
+    const textId = side === 'sender' ? 'timer-ring-text' : 'timer-ring-text-r';
+    const displayId = side === 'sender' ? 'timer-display' : 'timer-display-r';
+    const blockId = side === 'sender' ? 'sender-timer' : 'receiver-timer';
+
+    function tick() {
+      const remaining = expiresAt - Date.now();
+      const formatted = formatTime(remaining);
+      document.getElementById(displayId).textContent = formatted;
+      document.getElementById(textId).textContent = formatted;
+
+      // Ring fill
+      const fraction = Math.max(0, remaining / TOTAL_TTL);
+      const offset = CIRCUMFERENCE * (1 - fraction);
+      const fill = document.getElementById(fillId);
+      fill.style.strokeDasharray = CIRCUMFERENCE;
+      fill.style.strokeDashoffset = offset;
+
+      // Color warning
+      const block = document.getElementById(blockId);
+      block.classList.toggle('timer-warning', remaining < 120_000 && remaining >= 30_000);
+      block.classList.toggle('timer-critical', remaining < 30_000);
+
+      if (remaining <= 0) {
+        stopTimer();
+        document.getElementById(displayId).textContent = 'Expired';
+        document.getElementById(textId).textContent = 'EXP';
+        showToast('Room has expired!', 'error', 5000);
+      }
+    }
+
+    tick();
+    timerInterval = setInterval(tick, 1000);
+  }
+
+  function stopTimer() {
+    if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
+  }
+
+  // ═══════════════════════════════════════════
+  //  Receive Flow
+  // ═══════════════════════════════════════════
+  let selectedForDownload = new Set();
+  let receivedFiles = [];
+  let receiveRoomCode = null;
+
+  function checkRoomCodeInput() {
+    const val = document.getElementById('room-code-input').value;
+    document.getElementById('join-room-btn').disabled = val.length !== 6;
+  }
+
+  async function joinRoom() {
+    const code = document.getElementById('room-code-input').value.trim().toUpperCase();
+    if (code.length !== 6) return;
+
+    const btn = document.getElementById('join-room-btn');
+    btn.disabled = true;
+    btn.innerHTML = '<div class="spinner"></div> Searching…';
+
+    try {
+      const res = await fetch(`/api/room/${code}`);
+      const data = await res.json();
+
+      if (!data.success) {
+        show('receive-expired');
+        hide('receive-step-1');
+        return;
+      }
+
+      receivedFiles = data.files;
+      receiveRoomCode = code;
+      expiresAt = data.expiresAt;
+
+      renderReceiveFileList();
+      hide('receive-step-1');
+      show('receive-step-2');
+      startTimer(data.expiresAt, 'receiver');
+
+    } catch (err) {
+      showToast('Network error. Is the server running?', 'error');
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = '🔍 Find Room';
+    }
+  }
+
+  function renderReceiveFileList() {
+    const list = document.getElementById('receive-file-list');
+    list.innerHTML = '';
+    selectedForDownload.clear();
+    updateDownloadBtn();
+
+    receivedFiles.forEach((f, i) => {
+      const li = document.createElement('li');
+      li.className = 'receive-file-item';
+      li.id = `rfile-${i}`;
+      li.setAttribute('role', 'checkbox');
+      li.setAttribute('aria-checked', 'false');
+      li.setAttribute('tabindex', '0');
+      li.onclick = () => toggleFileSelect(i, f.name);
+      li.onkeydown = (e) => { if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); toggleFileSelect(i, f.name); } };
+      li.innerHTML = `
+        <div class="file-checkbox" id="chk-${i}"></div>
+        <span class="file-emoji">${fileEmoji(f.name || f.originalName)}</span>
+        <div class="file-info">
+          <div class="file-name">${escapeHtml(f.originalName || f.name)}</div>
+          <div class="file-size">${formatBytes(f.size)}</div>
+        </div>
+      `;
+      list.appendChild(li);
+    });
+  }
+
+  function toggleFileSelect(i, filename) {
+    const el = document.getElementById(`rfile-${i}`);
+    const chk = document.getElementById(`chk-${i}`);
+    if (selectedForDownload.has(i)) {
+      selectedForDownload.delete(i);
+      el.classList.remove('selected');
+      el.setAttribute('aria-checked', 'false');
+      chk.textContent = '';
+    } else {
+      selectedForDownload.add(i);
+      el.classList.add('selected');
+      el.setAttribute('aria-checked', 'true');
+      chk.textContent = '✓';
+    }
+    updateDownloadBtn();
+    updateSelectAllBtn();
+  }
+
+  function updateDownloadBtn() {
+    const btn = document.getElementById('download-btn');
+    const count = selectedForDownload.size;
+    btn.disabled = count === 0;
+    btn.textContent = count > 0 ? `⬇️ Download ${count} file${count > 1 ? 's' : ''}` : '⬇️ Download Selected';
+    document.getElementById('selected-count').textContent = `${count} file${count !== 1 ? 's' : ''} selected`;
+  }
+
+  function updateSelectAllBtn() {
+    const btn = document.getElementById('select-all-btn');
+    const allSelected = selectedForDownload.size === receivedFiles.length;
+    btn.textContent = allSelected ? 'Deselect All' : 'Select All';
+  }
+
+  function toggleSelectAll() {
+    if (selectedForDownload.size === receivedFiles.length) {
+      // Deselect all
+      selectedForDownload.clear();
+      receivedFiles.forEach((_, i) => {
+        document.getElementById(`rfile-${i}`)?.classList.remove('selected');
+        document.getElementById(`rfile-${i}`)?.setAttribute('aria-checked','false');
+        const chk = document.getElementById(`chk-${i}`);
+        if (chk) chk.textContent = '';
+      });
+    } else {
+      // Select all
+      receivedFiles.forEach((f, i) => {
+        selectedForDownload.add(i);
+        document.getElementById(`rfile-${i}`)?.classList.add('selected');
+        document.getElementById(`rfile-${i}`)?.setAttribute('aria-checked','true');
+        const chk = document.getElementById(`chk-${i}`);
+        if (chk) chk.textContent = '✓';
+      });
+    }
+    updateDownloadBtn();
+    updateSelectAllBtn();
+  }
+
+  function downloadSelected() {
+    if (expiresAt && Date.now() >= expiresAt) {
+      showToast('Room has expired!', 'error');
+      return;
+    }
+    const indices = Array.from(selectedForDownload);
+    if (indices.length === 0) return;
+
+    // Stagger downloads to avoid browser blocking multiple downloads
+    indices.forEach((i, idx) => {
+      const file = receivedFiles[i];
+      setTimeout(() => {
+        const a = document.createElement('a');
+        a.href = `/api/download/${receiveRoomCode}/${encodeURIComponent(file.name)}`;
+        a.download = file.originalName || file.name;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+      }, idx * 400);
+    });
+
+    showToast(`Downloading ${indices.length} file${indices.length > 1 ? 's' : ''}…`, 'success');
+  }
+
+  function resetReceive() {
+    show('receive-step-1');
+    hide('receive-step-2');
+    hide('receive-expired');
+    document.getElementById('room-code-input').value = '';
+    document.getElementById('join-room-btn').disabled = true;
+    document.getElementById('receive-file-list').innerHTML = '';
+    selectedForDownload.clear();
+    receivedFiles = [];
+    receiveRoomCode = null;
+    stopTimer();
+    document.getElementById('receive-panel').classList.remove('active');
+  }
+
+  // ═══════════════════════════════════════════
+  //  Keyboard nav for choice cards
+  // ═══════════════════════════════════════════
+  document.getElementById('send-btn').addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); showSend(); } });
+  document.getElementById('receive-btn').addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); showReceive(); } });
+</script>
+</body>
+</html>
