@@ -10,28 +10,28 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
   <style>
     /* ─── Reset & Base ─── */
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; word-wrap: break-word; overflow-wrap: break-word; }
 
     :root {
-      --bg-deep:      #040a08;
-      --bg-mid:       #091410;
-      --bg-card:      rgba(255,255,255,0.03);
-      --bg-card-hover:rgba(255,255,255,0.06);
-      --border:       rgba(255,255,255,0.08);
-      --border-glow:  rgba(16,185,129,0.5);
-      --accent:       #10b981;
-      --accent-2:     #f59e0b;
-      --accent-grad:  linear-gradient(135deg, #10b981, #f59e0b);
-      --danger:       #ef4444;
-      --success:      #10b981;
-      --text-1:       #f8fafc;
-      --text-2:       #94a3b8;
-      --text-3:       #475569;
+      --bg-deep:      #fcfaf8;
+      --bg-mid:       #f5f1eb;
+      --bg-card:      #ffffff;
+      --bg-card-hover:rgba(255,255,255,0.8);
+      --border:       #e5dfd3;
+      --border-glow:  rgba(211,47,47,0.3);
+      --accent:       #d32f2f;
+      --accent-2:     #e65100;
+      --accent-grad:  linear-gradient(135deg, #d32f2f, #e65100);
+      --danger:       #c62828;
+      --success:      #2e7d32;
+      --text-1:       #292524;
+      --text-2:       #57534e;
+      --text-3:       #a8a29e;
       --radius-sm:    10px;
       --radius-md:    16px;
       --radius-lg:    24px;
-      --shadow-card:  0 8px 32px rgba(0,0,0,0.4);
-      --shadow-glow:  0 0 40px rgba(16,185,129,0.15);
+      --shadow-card:  0 8px 32px rgba(120,110,100,0.08);
+      --shadow-glow:  0 0 40px rgba(211,47,47,0.15);
       --transition:   all 0.25s cubic-bezier(0.4,0,0.2,1);
     }
 
@@ -49,8 +49,8 @@
       position: fixed;
       inset: 0;
       background:
-        radial-gradient(ellipse 80% 60% at 20% 10%, rgba(16,185,129,0.08) 0%, transparent 60%),
-        radial-gradient(ellipse 60% 50% at 80% 80%, rgba(245,158,11,0.06) 0%, transparent 60%);
+        radial-gradient(ellipse 80% 60% at 20% 10%, rgba(211,47,47,0.04) 0%, transparent 60%),
+        radial-gradient(ellipse 60% 50% at 80% 80%, rgba(230,81,0,0.04) 0%, transparent 60%);
       pointer-events: none;
       z-index: 0;
     }
@@ -64,8 +64,8 @@
       z-index: 0;
       animation: orb-float 8s ease-in-out infinite alternate;
     }
-    .orb-1 { width: 400px; height: 400px; background: rgba(16,185,129,0.06); top: -100px; left: -100px; animation-delay: 0s; }
-    .orb-2 { width: 300px; height: 300px; background: rgba(245,158,11,0.05); bottom: -50px; right: -50px; animation-delay: -4s; }
+    .orb-1 { width: 400px; height: 400px; background: rgba(211,47,47,0.03); top: -100px; left: -100px; animation-delay: 0s; }
+    .orb-2 { width: 300px; height: 300px; background: rgba(230,81,0,0.03); bottom: -50px; right: -50px; animation-delay: -4s; }
     @keyframes orb-float { from { transform: translate(0,0) scale(1); } to { transform: translate(30px,20px) scale(1.1); } }
 
     /* ─── Layout ─── */
@@ -132,7 +132,7 @@
       font-weight: 800;
       line-height: 1.15;
       margin-bottom: 14px;
-      background: linear-gradient(135deg, #fff 40%, #94a3b8);
+      background: linear-gradient(135deg, #292524 40%, #78716c);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       background-clip: text;
@@ -148,9 +148,9 @@
       display: inline-flex;
       align-items: center;
       gap: 6px;
-      background: rgba(16,185,129,0.15);
-      border: 1px solid rgba(16,185,129,0.3);
-      color: #6ee7b7;
+      background: rgba(211,47,47,0.1);
+      border: 1px solid rgba(211,47,47,0.2);
+      color: #d32f2f;
       font-size: 12px;
       font-weight: 600;
       padding: 4px 12px;
@@ -188,8 +188,8 @@
       opacity: 0;
       transition: opacity 0.3s;
     }
-    .choice-card.send::before { background: radial-gradient(circle at 50% 0%, rgba(139,92,246,0.2), transparent 60%); }
-    .choice-card.receive::before { background: radial-gradient(circle at 50% 0%, rgba(6,182,212,0.2), transparent 60%); }
+    .choice-card.send::before { background: radial-gradient(circle at 50% 0%, rgba(211,47,47,0.05), transparent 60%); }
+    .choice-card.receive::before { background: radial-gradient(circle at 50% 0%, rgba(230,81,0,0.05), transparent 60%); }
     .choice-card:hover { border-color: var(--border-glow); transform: translateY(-4px); box-shadow: var(--shadow-glow); background: var(--bg-card-hover); }
     .choice-card:hover::before { opacity: 1; }
     .choice-card:active { transform: translateY(-2px); }
@@ -200,8 +200,8 @@
       font-size: 30px;
       margin: 0 auto 16px;
     }
-    .send .choice-icon { background: rgba(139,92,246,0.15); }
-    .receive .choice-icon { background: rgba(6,182,212,0.15); }
+    .send .choice-icon { background: rgba(211,47,47,0.08); }
+    .receive .choice-icon { background: rgba(230,81,0,0.08); }
     .choice-card h2 { font-size: 1.3rem; font-weight: 700; margin-bottom: 8px; }
     .choice-card p { font-size: 0.875rem; color: var(--text-2); line-height: 1.5; }
 
@@ -589,23 +589,6 @@
     }
     .info-banner span { flex-shrink: 0; }
 
-    /* ─── Ad Container ─── */
-    .ad-container {
-      width: 100%;
-      max-width: 620px;
-      height: 90px;
-      margin: 32px auto 0;
-      background: rgba(255,255,255,0.02);
-      border: 1px dashed var(--border);
-      border-radius: var(--radius-md);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: var(--text-3);
-      font-size: 0.85rem;
-      text-transform: uppercase;
-      letter-spacing: 0.1em;
-    }
 
     /* ─── Divider ─── */
     .divider { height: 1px; background: var(--border); margin: 20px 0; }
@@ -676,11 +659,6 @@
         </div>
       </div>
 
-      <!-- Advertisement Section -->
-      <div class="ad-container">
-        <!-- Google AdSense or similar ad script can be placed here -->
-        <span>Advertisement Placeholder</span>
-      </div>
     </section>
 
     <!-- ════════════ SEND PANEL ════════════ -->
