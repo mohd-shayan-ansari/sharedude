@@ -13,25 +13,25 @@
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      --bg-deep:      #0a0a14;
-      --bg-mid:       #0f0f1e;
-      --bg-card:      rgba(255,255,255,0.04);
-      --bg-card-hover:rgba(255,255,255,0.07);
+      --bg-deep:      #040a08;
+      --bg-mid:       #091410;
+      --bg-card:      rgba(255,255,255,0.03);
+      --bg-card-hover:rgba(255,255,255,0.06);
       --border:       rgba(255,255,255,0.08);
-      --border-glow:  rgba(139,92,246,0.5);
-      --accent:       #8b5cf6;
-      --accent-2:     #06b6d4;
-      --accent-grad:  linear-gradient(135deg, #8b5cf6, #06b6d4);
+      --border-glow:  rgba(16,185,129,0.5);
+      --accent:       #10b981;
+      --accent-2:     #f59e0b;
+      --accent-grad:  linear-gradient(135deg, #10b981, #f59e0b);
       --danger:       #ef4444;
-      --success:      #22c55e;
-      --text-1:       #f1f5f9;
+      --success:      #10b981;
+      --text-1:       #f8fafc;
       --text-2:       #94a3b8;
       --text-3:       #475569;
       --radius-sm:    10px;
       --radius-md:    16px;
       --radius-lg:    24px;
       --shadow-card:  0 8px 32px rgba(0,0,0,0.4);
-      --shadow-glow:  0 0 40px rgba(139,92,246,0.15);
+      --shadow-glow:  0 0 40px rgba(16,185,129,0.15);
       --transition:   all 0.25s cubic-bezier(0.4,0,0.2,1);
     }
 
@@ -49,8 +49,8 @@
       position: fixed;
       inset: 0;
       background:
-        radial-gradient(ellipse 80% 60% at 20% 10%, rgba(139,92,246,0.12) 0%, transparent 60%),
-        radial-gradient(ellipse 60% 50% at 80% 80%, rgba(6,182,212,0.10) 0%, transparent 60%);
+        radial-gradient(ellipse 80% 60% at 20% 10%, rgba(16,185,129,0.08) 0%, transparent 60%),
+        radial-gradient(ellipse 60% 50% at 80% 80%, rgba(245,158,11,0.06) 0%, transparent 60%);
       pointer-events: none;
       z-index: 0;
     }
@@ -64,8 +64,8 @@
       z-index: 0;
       animation: orb-float 8s ease-in-out infinite alternate;
     }
-    .orb-1 { width: 400px; height: 400px; background: rgba(139,92,246,0.08); top: -100px; left: -100px; animation-delay: 0s; }
-    .orb-2 { width: 300px; height: 300px; background: rgba(6,182,212,0.07); bottom: -50px; right: -50px; animation-delay: -4s; }
+    .orb-1 { width: 400px; height: 400px; background: rgba(16,185,129,0.06); top: -100px; left: -100px; animation-delay: 0s; }
+    .orb-2 { width: 300px; height: 300px; background: rgba(245,158,11,0.05); bottom: -50px; right: -50px; animation-delay: -4s; }
     @keyframes orb-float { from { transform: translate(0,0) scale(1); } to { transform: translate(30px,20px) scale(1.1); } }
 
     /* ─── Layout ─── */
@@ -578,8 +578,8 @@
       display: flex;
       gap: 12px;
       align-items: flex-start;
-      background: rgba(139,92,246,0.08);
-      border: 1px solid rgba(139,92,246,0.2);
+      background: rgba(16,185,129,0.08);
+      border: 1px solid rgba(16,185,129,0.2);
       border-radius: var(--radius-sm);
       padding: 14px 16px;
       font-size: 0.825rem;
@@ -589,20 +589,23 @@
     }
     .info-banner span { flex-shrink: 0; }
 
-    /* ─── How It Works ─── */
-    .how-section { width: 100%; max-width: 620px; margin-top: 12px; }
-    .how-title { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-3); font-weight: 600; text-align: center; margin-bottom: 16px; }
-    .how-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
-    .how-card {
-      background: var(--bg-card);
-      border: 1px solid var(--border);
+    /* ─── Ad Container ─── */
+    .ad-container {
+      width: 100%;
+      max-width: 620px;
+      height: 90px;
+      margin: 32px auto 0;
+      background: rgba(255,255,255,0.02);
+      border: 1px dashed var(--border);
       border-radius: var(--radius-md);
-      padding: 18px 14px;
-      text-align: center;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-3);
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
     }
-    .how-num { font-size: 10px; font-weight: 700; color: var(--accent); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 8px; }
-    .how-emoji { font-size: 24px; margin-bottom: 8px; }
-    .how-desc { font-size: 0.78rem; color: var(--text-2); line-height: 1.5; }
 
     /* ─── Divider ─── */
     .divider { height: 1px; background: var(--border); margin: 20px 0; }
@@ -623,7 +626,7 @@
       .choice-grid { grid-template-columns: 1fr; max-width: 340px; }
       .panel-card { padding: 20px; }
       .room-code-value { font-size: 2rem; letter-spacing: 0.2em; }
-      .how-grid { grid-template-columns: 1fr; }
+
     }
   </style>
 </head>
@@ -666,25 +669,10 @@
         </div>
       </div>
 
-      <div class="how-section">
-        <div class="how-title">How it works</div>
-        <div class="how-grid">
-          <div class="how-card">
-            <div class="how-num">Step 1</div>
-            <div class="how-emoji">📤</div>
-            <div class="how-desc">Sender uploads files & gets a 6-char room code</div>
-          </div>
-          <div class="how-card">
-            <div class="how-num">Step 2</div>
-            <div class="how-emoji">💬</div>
-            <div class="how-desc">Share the code with your receiver via any channel</div>
-          </div>
-          <div class="how-card">
-            <div class="how-num">Step 3</div>
-            <div class="how-emoji">⬇️</div>
-            <div class="how-desc">Receiver enters code & downloads selected files</div>
-          </div>
-        </div>
+      <!-- Advertisement Section -->
+      <div class="ad-container">
+        <!-- Google AdSense or similar ad script can be placed here -->
+        <span>Advertisement Placeholder</span>
       </div>
     </section>
 
