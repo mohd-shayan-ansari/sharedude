@@ -35,7 +35,7 @@ One free account (Supabase) handles everything: file storage + room state databa
 
 1. In left sidebar → **"Storage"**
 2. Click **"New bucket"**
-   - Name: **`sharedrop`** (must match exactly)
+   - Name: **`share drop`** (must match exactly)
    - Public bucket: **OFF** (private — downloads use signed URLs)
 3. Click **"Create bucket"** ✅
 
