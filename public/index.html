@@ -712,7 +712,7 @@
             <input type="file" id="file-input" multiple accept="*/*" aria-label="Select files" />
             <div class="drop-icon">📂</div>
             <div class="drop-text">Drop files here or click to browse</div>
-            <div class="drop-sub">Up to 10 files · 100 MB each</div>
+            <div class="drop-sub">Up to 10 files · 4 MB each</div>
           </div>
           <ul class="file-list" id="file-list"></ul>
           <div class="file-count-info" id="file-count-info" style="display:none">
@@ -971,15 +971,18 @@
   });
   fileInput.addEventListener('change', () => handleFiles(Array.from(fileInput.files)));
 
+  const MAX_FILE_BYTES = 4 * 1024 * 1024; // 4 MB — Vercel free tier limit
+
   function handleFiles(newFiles) {
     const remaining = 10 - selectedFiles.length;
     if (remaining <= 0) { showToast('Max 10 files reached', 'error'); return; }
     const toAdd = newFiles.slice(0, remaining);
     if (newFiles.length > remaining) showToast(`Only ${remaining} more file(s) can be added`, 'info');
 
-    // Check duplicates
+    // Check size & duplicates
     const names = selectedFiles.map(f => f.name);
     const unique = toAdd.filter(f => {
+      if (f.size > MAX_FILE_BYTES) { showToast(`"${f.name}" exceeds the 4 MB limit`, 'error'); return false; }
       if (names.includes(f.name)) { showToast(`"${f.name}" already added`, 'info'); return false; }
       return true;
     });
@@ -1077,33 +1080,28 @@
     }
   }
 
-  function uploadFiles(roomCode) {
-    return new Promise((resolve, reject) => {
+  // Upload files sequentially — one per request to stay under Vercel's 4.5 MB body limit
+  async function uploadFiles(roomCode) {
+    const total = selectedFiles.length;
+    for (let i = 0; i < total; i++) {
+      const file = selectedFiles[i];
+      const pct = Math.round((i / total) * 100);
+
+      document.getElementById('progress-bar').style.width = pct + '%';
+      document.getElementById('progress-pct').textContent = pct + '%';
+      document.getElementById('upload-progress').querySelector('.progress-label span').textContent =
+        `Uploading ${i + 1}/${total}: ${file.name}…`;
+
       const formData = new FormData();
-      selectedFiles.forEach(f => formData.append('files', f));
+      formData.append('file', file);
 
-      const xhr = new XMLHttpRequest();
-      xhr.open('POST', `/api/upload/${roomCode}`);
-
-      xhr.upload.onprogress = (e) => {
-        if (e.lengthComputable) {
-          const pct = Math.round((e.loaded / e.total) * 100);
-          document.getElementById('progress-bar').style.width = pct + '%';
-          document.getElementById('progress-pct').textContent = pct + '%';
-        }
-      };
-
-      xhr.onload = () => {
-        try {
-          const data = JSON.parse(xhr.responseText);
-          if (data.success) resolve(data);
-          else reject(new Error(data.error || 'Upload failed'));
-        } catch { reject(new Error('Upload failed')); }
-      };
-
-      xhr.onerror = () => reject(new Error('Network error during upload'));
-      xhr.send(formData);
-    });
+      const res = await fetch(`/api/upload/${roomCode}`, { method: 'POST', body: formData });
+      const data = await res.json();
+      if (!data.success) throw new Error(data.error || `Failed to upload "${file.name}"`);
+    }
+    // Complete
+    document.getElementById('progress-bar').style.width = '100%';
+    document.getElementById('progress-pct').textContent = '100%';
   }
 
   function copyRoomCode() {
@@ -1223,7 +1221,7 @@
       startTimer(data.expiresAt, 'receiver');
 
     } catch (err) {
-      showToast('Network error. Is the server running?', 'error');
+      showToast('Network error — please try again.', 'error');
     } finally {
       btn.disabled = false;
       btn.innerHTML = '🔍 Find Room';
@@ -1326,7 +1324,7 @@
       const file = receivedFiles[i];
       setTimeout(() => {
         const a = document.createElement('a');
-        a.href = `/api/download/${receiveRoomCode}/${encodeURIComponent(file.name)}`;
+        a.href = `/api/download?code=${receiveRoomCode}&file=${encodeURIComponent(file.name)}`;
         a.download = file.originalName || file.name;
         document.body.appendChild(a);
         a.click();
